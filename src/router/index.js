@@ -5,8 +5,10 @@ const frontRoutes = [
   {
     path: '/home',
     component: HomePage,
-    children: [
-    ]
+  },
+  {
+    path: '/design',
+    component:() => import('@/views/DesignPage.vue')
   }
 ]
 
