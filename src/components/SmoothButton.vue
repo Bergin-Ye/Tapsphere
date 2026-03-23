@@ -1,5 +1,5 @@
 <template>
-  <div id="liquid-metal" ref="shaderContainer" tabindex="0" @keydown.enter="handleClick">
+  <div id="liquid-metal" ref="shaderContainer" tabindex="0" @keydown.enter="handleClick" data-material="Matte Metal">
     <div class="inner-circle"></div>
     <div class="outline"></div>
   </div>

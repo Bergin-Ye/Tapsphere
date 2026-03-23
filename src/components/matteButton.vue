@@ -1,5 +1,5 @@
 <template>
-  <label class="switch" tabindex="0" @keydown.enter="handleClick">
+  <label class="switch" tabindex="0" @keydown.enter="handleClick" data-material="Satin Metal">
     <input type="checkbox" @change="handleClick">
     <div class="button">
       <span class="icon">
@@ -9,8 +9,11 @@
 </template>
 
 <script setup>
-const handleClick = () => {
-  console.log('按钮点击');
+import { defineEmits } from 'vue';
+const emit = defineEmits(['MaterialChangeChange']);
+
+const handleClick = (e) => {
+  e.stopPropagation(); // 防止事件冒泡到父级后重复处理
 };
 </script>
 

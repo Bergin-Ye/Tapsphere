@@ -1,5 +1,5 @@
 <template>
-  <button class="metal radial"></button>
+  <button class="metal radial" data-material="Brushed Metal"></button>
 </template>
 
 <script setup>
