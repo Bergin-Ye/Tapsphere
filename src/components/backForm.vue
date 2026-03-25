@@ -4,11 +4,10 @@
   <div class="input-container">
     <div class="input-item" v-for="(item, index) in inputItems" :key="index">
       <label class="label" :for="item.id">{{ item.label }}</label>
-
       <div class="input-with-color-btn">
         <div class="input-wrapper">
-          <input autocomplete="off" :name="item.id" :id="item.id" class="input" :type="item.type"
-            :style="{ fontSize: item.fontSize + 'px', color: currentColor[item.id] }">
+          <input v-model="inputValues[item.id]" autocomplete="off" :name="item.id" :id="item.id" class="input"
+            :type="item.type">
           <button class="font-size-btn" @click.stop="() => openFontSizePanel(index)">
             <img :src="icon" alt="大小" class="font-size-icon">
           </button>
@@ -24,8 +23,8 @@
 
   <div class="upload">
     <el-upload action="#" list-type="picture-card" :auto-upload="false" :file-list="uploadFileList"
-      :on-remove="handleRemove" :limit="2" :on-change="handleChange" class="upload-component"
-      :disabled="uploadFileList.length >= 2">
+      v-model:file-list="uploadFileList" :on-remove="handleRemove" :limit="2" :on-change="handleChange"
+      class="upload-component" :disabled="uploadFileList.length >= 2">
       <el-icon>
         <Plus />
       </el-icon>
@@ -73,7 +72,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 // 注意：确保RainbowButton组件路径正确，否则会报错
 import RainbowButton from '@/components/rainbowButton.vue';
 import { Delete, Download, Plus, ZoomIn } from '@element-plus/icons-vue';
@@ -82,6 +81,18 @@ import { Delete, Download, Plus, ZoomIn } from '@element-plus/icons-vue';
 const dialogImageUrl = ref('');
 const dialogVisible = ref(false);
 const disabled = ref(false);
+
+//表单存储 以及传值给父组件
+const emit = defineEmits(['update:backData']);
+
+const inputValues = ref({
+  Company: '',
+  Address: '',
+  SocialMedia: '',
+  Slogan: '',
+  Customtext: '',
+});
+
 
 // 核心：文件列表（修复删除功能的关键）
 const uploadFileList = ref([]);
@@ -102,32 +113,10 @@ const handlePictureCardPreview = (file) => {
   dialogVisible.value = true;
 };
 
-// 下载文件（可补充实际下载逻辑）
-const handleDownload = (file) => {
-  console.log('下载文件：', file);
-  // 示例：实际下载逻辑
-  // if (file.url) {
-  //   const a = document.createElement('a');
-  //   a.href = file.url;
-  //   a.download = file.name || 'image';
-  //   a.click();
-  // }
-};
-
 // 处理文件上传
 const handleChange = (file, fileList) => {
-  console.log('文件上传：', file);
-  console.log('文件列表：', fileList);
-  // 当选择文件时，更新文件列表
-  if (file.status === 'ready') {
-    // 检查是否超过限制
-    if (fileList.length > 3) {
-      // 超过限制时，只保留前3个文件
-      uploadFileList.value = fileList.slice(0, 3);
-      return;
-    }
-    uploadFileList.value = fileList;
-  }
+  // 只需要同步最新列表，ElUpload 自己会维护
+  uploadFileList.value = fileList;
 };
 
 // 字体大小和颜色相关
@@ -143,8 +132,8 @@ const inputItems = ref([
 
 const showFontPanel = ref(false);
 const activeInputIndex = ref(-1);
-const fontSizeOptions = ref([12, 14, 16, 18, 20, 22]);
-const selectedFontSize = ref(16);
+const fontSizeOptions = ref([20, 24, 26, 28, 30, 32, 34, 36, 40]);
+const selectedFontSize = ref(20);
 
 const currentColor = ref({
   Company: '#FFFFFF',
@@ -172,6 +161,25 @@ const setFontSize = (size) => {
   inputItems.value[activeInputIndex.value].fontSize = size;
   showFontPanel.value = false;
 };
+
+
+//监听这几个变量的变化 然后传递给父组件
+watch(
+  [inputValues, currentColor, inputItems, uploadFileList],
+  () => {
+    emit('update:backData', {
+      // 把这几个值传递给父组件
+      texts: { ...inputValues.value },
+      colors: { ...currentColor.value },
+      sizes: inputItems.value,
+      // 图片：只传 url，方便主页面使用
+      images: uploadFileList.value.map(f => f.url || f.raw?.url || '')
+    })
+  },
+  { deep: true, immediate: true, flush: 'post' }
+)
+
+
 </script>
 
 <style scoped lang="scss">

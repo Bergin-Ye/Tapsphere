@@ -7,9 +7,9 @@
 
       <div class="input-with-color-btn">
         <div class="input-wrapper">
-          <input autocomplete="off" :name="item.id" :id="item.id" class="input" :type="item.type"
-            :style="{ fontSize: item.fontSize + 'px', color: currentColor[item.id] }">
-          <button class="font-size-btn" @click.stop="() => openFontSizePanel(index)">
+          <input v-model="inputValues[item.id]" autocomplete="off" :name="item.id" :id="item.id" class="input"
+            :type="item.type">
+          <button class=" font-size-btn" @click.stop="() => openFontSizePanel(index)">
             <img :src="icon" alt="大小" class="font-size-icon">
           </button>
         </div>
@@ -23,9 +23,10 @@
   </div>
 
   <div class="upload">
-    <el-upload action="#" list-type="picture-card" :auto-upload="false" :file-list="uploadFileList"
-      :on-remove="handleRemove" :limit="2" :on-change="handleChange" class="upload-component"
-      :disabled="uploadFileList.length >= 2">
+    <!-- 把上传的图片传递给父组件 -->
+    <el-upload action="#" list-type="picture-card" :auto-upload="false" v-model:file-list="uploadFileList"
+      :file-list="uploadFileList" :on-remove="handleRemove" :limit="2" :on-change="handleChange"
+      class="upload-component" :disabled="uploadFileList.length >= 2">
       <el-icon>
         <Plus />
       </el-icon>
@@ -78,8 +79,17 @@ import { ref, defineEmits, watch } from 'vue';
 import RainbowButton from '@/components/rainbowButton.vue';
 import { Delete, Download, Plus, ZoomIn } from '@element-plus/icons-vue';
 
+
 //表单存储 以及传值给父组件
-const emit = defineEmits(['updateFormData']);
+const emit = defineEmits(['update:frontData']);
+
+const inputValues = ref({
+  FullName: '',
+  Position: '',
+  Company: '',
+  Telephone: '',
+  Email: ''
+});
 
 // 图片预览相关
 const dialogImageUrl = ref('');
@@ -119,8 +129,6 @@ const handleDownload = (file) => {
 
 // 处理文件上传
 const handleChange = (file, fileList) => {
-  console.log('文件上传：', file);
-  console.log('文件列表：', fileList);
   // 当选择文件时，更新文件列表
   if (file.status === 'ready') {
     // 检查是否超过限制
@@ -146,8 +154,8 @@ const inputItems = ref([
 
 const showFontPanel = ref(false);
 const activeInputIndex = ref(-1);
-const fontSizeOptions = ref([12, 14, 16, 18, 20, 22]);
-const selectedFontSize = ref(16);
+const fontSizeOptions = ref([20, 24, 26, 28, 30, 32, 34, 36, 40]);
+const selectedFontSize = ref(20);
 
 const currentColor = ref({
   FullName: '#FFFFFF',
@@ -160,6 +168,7 @@ const currentColor = ref({
 // 颜色选择回调
 const onColorPicked = (index, color) => {
   console.log(inputItems.value[index].label, ':', color);
+  currentColor.value[inputItems.value[index].id] = color // 加这行
 };
 
 // 打开字体大小选择面板
@@ -175,6 +184,26 @@ const setFontSize = (size) => {
   inputItems.value[activeInputIndex.value].fontSize = size;
   showFontPanel.value = false;
 };
+
+
+
+
+//监听这几个变量的变化 然后传递给父组件
+watch(
+  [inputValues, currentColor, inputItems, uploadFileList],
+  () => {
+    emit('update:frontData', {
+      // 把这几个值传递给父组件
+      texts: { ...inputValues.value },
+      colors: { ...currentColor.value },
+      sizes: inputItems.value,
+      // 图片：只传 url，方便主页面使用
+      images: uploadFileList.value.map(f => f.url)
+    })
+  },
+  { deep: true, immediate: true }
+)
+
 </script>
 
 <style scoped lang="scss">
