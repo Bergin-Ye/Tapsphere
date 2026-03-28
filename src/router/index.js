@@ -9,6 +9,18 @@ const frontRoutes = [
   {
     path: '/design',
     component:() => import('@/views/DesignPage.vue')
+  },
+  {
+    path: '/login',
+    component:() => import('@/views/LoginPage.vue')
+  },
+  {
+    path: '/register',
+    component:() => import('@/views/RegisterPage.vue')
+  },
+  {
+    path: '/profile',
+    component:() => import('@/views/ProfilePage.vue')
   }
 ]
 

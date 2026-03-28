@@ -184,7 +184,7 @@ onUnmounted(() => {
   width: 44px;
   height: 44px;
   border-radius: 999px;
-  margin-left: 30px;
+  margin-left: 0;
   display: inline-flex !important;
   align-items: center;
   justify-content: center;

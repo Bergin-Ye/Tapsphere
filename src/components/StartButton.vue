@@ -1,7 +1,17 @@
 <template>
-  <button>
+  <button @click="handleStartFree">
     Start Now</button>
 </template>
+
+<script setup>
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+const handleStartFree = () => {
+  router.push('/design')
+}
+</script>
 
 <style scoped>
 button {

@@ -1,19 +1,33 @@
 <template>
   <div class="white-header">
     <div class="left">
-      <el-image alt="logo" :src="logo1" style="width: 140px; height: 82px;"></el-image>
+      <el-image alt="logo" :src="logo1" style="width: 140px; height: 82px;" @click="handleHome"></el-image>
     </div>
     <div class="right">
-      <el-button class="logIn">Log in</el-button>
-      <el-button class="startFree">Start Free</el-button>
+      <el-button class="logIn" @click="handleLogIn">Log in</el-button>
+      <el-button class="startFree" @click="handleStartFree">Start Free</el-button>
     </div>
   </div>
 </template>
 
 <script setup>
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 const logo1 = new URL('@/assets/素材/logo/logo2.png', import.meta.url).href
 
+const handleHome = () => {
+  router.push('/home')
+}
+
+const handleLogIn = () => {
+  router.push('/login')
+}
+
+const handleStartFree = () => {
+  router.push('/design')
+}
 </script>
 
 <style scoped lang="scss">

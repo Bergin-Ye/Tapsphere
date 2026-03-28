@@ -1,79 +1,86 @@
 <template>
-  <div class="frontTitle">Please enter your information</div>
+  <div class="back-container">
+    <div class="frontTitle">Please enter your information</div>
 
-  <div class="input-container">
-    <div class="input-item" v-for="(item, index) in inputItems" :key="index">
-      <label class="label" :for="item.id">{{ item.label }}</label>
-      <div class="input-with-color-btn">
-        <div class="input-wrapper">
-          <input v-model="inputValues[item.id]" autocomplete="off" :name="item.id" :id="item.id" class="input"
-            :type="item.type">
-          <button class="font-size-btn" @click.stop="() => openFontSizePanel(index)">
-            <img :src="icon" alt="大小" class="font-size-icon">
-          </button>
-        </div>
+    <div class="input-container">
+      <div class="input-item" v-for="(item, index) in inputItems" :key="index">
+        <label class="label" :for="item.id">{{ item.label }}</label>
 
-        <div class="color-btn-wrapper">
-          <!-- 使用集成了颜色面板的彩虹按钮 -->
-          <RainbowButton v-model="currentColor[item.id]" @colorChange="(color) => onColorPicked(index, color)" />
+        <div class="input-row">
+          <!-- 1. 输入框区域 (包含内部的大小按钮) -->
+          <div class="input-wrapper">
+            <input v-model="inputValues[item.id]" autocomplete="off" :name="item.id" :id="item.id" class="input-field"
+              :type="item.type">
+            <!-- 大小按钮：绝对定位在内部靠右 -->
+            <button class="size-control-btn" @click.stop="() => openFontSizePanel(index)" type="button">
+              <img :src="icon" alt="Size" class="size-icon">
+            </button>
+          </div>
+
+          <!-- 2. 彩虹按钮区域 (在外部，有间距) -->
+          <div class="color-control-wrapper">
+            <RainbowButton v-model="currentColor[item.id]" @colorChange="(color) => onColorPicked(index, color)" />
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <div class="upload">
-    <el-upload action="#" list-type="picture-card" :auto-upload="false" :file-list="uploadFileList"
-      v-model:file-list="uploadFileList" :on-remove="handleRemove" :limit="2" :on-change="handleChange"
-      class="upload-component" :disabled="uploadFileList.length >= 2">
-      <el-icon>
-        <Plus />
-      </el-icon>
+    <div class="upload-section">
+      <el-upload action="#" list-type="picture-card" :auto-upload="false" :file-list="uploadFileList"
+        v-model:file-list="uploadFileList" :on-remove="handleRemove" :limit="2" :on-change="handleChange"
+        class="custom-upload" :disabled="uploadFileList.length >= 2">
+        <el-icon>
+          <Plus />
+        </el-icon>
 
-      <template #file="{ file }">
-        <div>
-          <img class="el-upload-list__item-thumbnail" :src="file.url" alt="" />
-          <span class="el-upload-list__item-actions">
-            <span class="el-upload-list__item-preview" @click="handlePictureCardPreview(file)">
-              <el-icon>
-                <ZoomIn />
-              </el-icon>
+        <template #file="{ file }">
+          <div class="upload-item">
+            <img class="el-upload-list__item-thumbnail" :src="file.url" alt="" />
+            <span class="el-upload-list__item-actions">
+              <span class="action-icon" @click="handlePictureCardPreview(file)">
+                <el-icon>
+                  <ZoomIn />
+                </el-icon>
+              </span>
+              <span v-if="!disabled" class="action-icon" @click="handleDownload(file)">
+                <el-icon>
+                  <Download />
+                </el-icon>
+              </span>
+              <span v-if="!disabled" class="action-icon" @click.stop="() => handleRemove(file)">
+                <el-icon>
+                  <Delete />
+                </el-icon>
+              </span>
             </span>
-            <span v-if="!disabled" class="el-upload-list__item-delete" @click="handleDownload(file)">
-              <el-icon>
-                <Download />
-              </el-icon>
-            </span>
-            <span v-if="!disabled" class="el-upload-list__item-delete" @click.stop="() => handleRemove(file)">
-              <el-icon>
-                <Delete />
-              </el-icon>
-            </span>
-          </span>
-        </div>
-      </template>
-    </el-upload>
+          </div>
+        </template>
+      </el-upload>
 
-    <el-dialog v-model="dialogVisible">
-      <!-- 修复：把w-full改成标准CSS样式width: 100% -->
-      <img style="width: 100%;" :src="dialogImageUrl" alt="Preview Image" />
-    </el-dialog>
-  </div>
-
-  <div class="font-size-panel" v-if="showFontPanel" @click.stop>
-    <div class="panel-title">Please select the font size</div>
-    <div class="size-options">
-      <button class="size-btn" :class="{ active: selectedFontSize === size }" v-for="size in fontSizeOptions"
-        :key="size" @click="setFontSize(size)">
-        {{ size }}px
-      </button>
+      <el-dialog v-model="dialogVisible">
+        <img class="preview-img" :src="dialogImageUrl" alt="Preview Image" />
+      </el-dialog>
     </div>
-    <button class="close-btn" @click="showFontPanel = false">close</button>
+
+    <!-- 字体大小选择面板 -->
+    <div class="font-size-modal" v-if="showFontPanel" @click.stop>
+      <div class="modal-content">
+        <div class="modal-title">Please select the font size</div>
+        <div class="size-grid">
+          <button class="size-option" :class="{ active: selectedFontSize === size }" v-for="size in fontSizeOptions"
+            :key="size" @click="setFontSize(size)" type="button">
+            {{ size }}px
+          </button>
+        </div>
+        <button class="modal-close" @click="showFontPanel = false" type="button">close</button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, watch } from 'vue';
-// 注意：确保RainbowButton组件路径正确，否则会报错
+// 注意：确保 RainbowButton 组件路径正确
 import RainbowButton from '@/components/rainbowButton.vue';
 import { Delete, Download, Plus, ZoomIn } from '@element-plus/icons-vue';
 
@@ -82,7 +89,7 @@ const dialogImageUrl = ref('');
 const dialogVisible = ref(false);
 const disabled = ref(false);
 
-//表单存储 以及传值给父组件
+// 表单存储以及传值给父组件
 const emit = defineEmits(['update:backData']);
 
 const inputValues = ref({
@@ -93,14 +100,11 @@ const inputValues = ref({
   Customtext: '',
 });
 
-
-// 核心：文件列表（修复删除功能的关键）
+// 核心：文件列表
 const uploadFileList = ref([]);
 
 // 删除文件逻辑
 const handleRemove = (file) => {
-  console.log('删除的文件：', file);
-  // 通过uid唯一标识找到并删除文件
   const fileIndex = uploadFileList.value.findIndex(item => item.uid === file.uid);
   if (fileIndex !== -1) {
     uploadFileList.value.splice(fileIndex, 1);
@@ -113,9 +117,13 @@ const handlePictureCardPreview = (file) => {
   dialogVisible.value = true;
 };
 
+// 下载文件
+const handleDownload = (file) => {
+  console.log('下载文件：', file);
+};
+
 // 处理文件上传
 const handleChange = (file, fileList) => {
-  // 只需要同步最新列表，ElUpload 自己会维护
   uploadFileList.value = fileList;
 };
 
@@ -162,192 +170,326 @@ const setFontSize = (size) => {
   showFontPanel.value = false;
 };
 
-
-//监听这几个变量的变化 然后传递给父组件
+// 监听变量变化传递给父组件
 watch(
   [inputValues, currentColor, inputItems, uploadFileList],
   () => {
     emit('update:backData', {
-      // 把这几个值传递给父组件
       texts: { ...inputValues.value },
       colors: { ...currentColor.value },
       sizes: inputItems.value,
-      // 图片：只传 url，方便主页面使用
       images: uploadFileList.value.map(f => f.url || f.raw?.url || '')
     })
   },
   { deep: true, immediate: true, flush: 'post' }
 )
-
-
 </script>
 
 <style scoped lang="scss">
-// 基础样式
+.back-container {
+  width: 100%;
+  max-width: 600px; // 限制最大宽度
+  margin-top: 30%;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
 .frontTitle {
   font-size: 28px;
   font-weight: 600;
   color: #1d1d1f;
-  margin-bottom: 1.2rem;
-  margin-top: 100px;
+  margin-bottom: 30px;
+  margin-top: 20px;
+  text-align: left;
 }
 
 .input-container {
   display: flex;
   flex-direction: column;
-  gap: 1.6rem;
+  gap: 20px;
 }
 
 .input-item {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 8px;
 }
 
-.input-with-color-btn {
+.label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #86868b;
+  margin-left: 4px;
+}
+
+/* 核心布局行：Flexbox */
+.input-row {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 12px;
+  /* 输入框与彩虹按钮之间的间距 */
+  width: 100%;
 }
 
+/* 输入框包装器：相对定位，作为大小按钮的容器 */
 .input-wrapper {
   position: relative;
+  flex: 1;
+  /* 占据剩余宽度，响应式关键 */
+  display: flex;
+  align-items: center;
 }
 
-.input {
-  width: 300px;
-  height: 44px;
+/* 原生输入框样式 */
+.input-field {
+  width: 100%;
+  height: 48px;
   background: #f2f2f7;
-  border-radius: 10px;
-  padding: 0 3rem 0 1rem;
+  border-radius: 12px;
   border: none;
-  font-size: 1rem;
+  padding: 0 45px 0 16px;
+  /* 关键：右侧留出 45px 空间给内部按钮 */
+  font-size: 16px;
   color: #1d1d1f;
   transition: all 0.2s ease;
+  box-sizing: border-box;
 
   &:focus {
     outline: none;
     background: #e5e5ea;
+    box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2);
+  }
+
+  &::placeholder {
+    color: #c7c7cc;
   }
 }
 
-.font-size-btn {
+/* 内部大小按钮：绝对定位 */
+.size-control-btn {
   position: absolute;
-  right: 0.5rem;
+  right: 10px;
+  /* 靠右 */
   top: 50%;
   transform: translateY(-50%);
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border: none;
   background: transparent;
+  border-radius: 6px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
+  transition: background 0.2s;
+  z-index: 2;
 
   &:hover {
     background: rgba(0, 0, 0, 0.05);
   }
+
+  &:active {
+    background: rgba(0, 0, 0, 0.1);
+  }
 }
 
-.font-size-icon {
-  width: 20px;
-  height: 20px;
+.size-icon {
+  width: 22px;
+  height: 22px;
   object-fit: contain;
+  pointer-events: none;
 }
 
-.color-btn-wrapper {
+/* 外部彩虹按钮容器 */
+.color-control-wrapper {
+  flex-shrink: 0;
+  /* 防止被压缩 */
+  display: flex;
+  align-items: center;
+}
+
+/* 上传区域样式 */
+.upload-section {
+  margin-top: 40px;
+}
+
+.custom-upload {
+  :deep(.el-upload-list__item) {
+    transition: all 0.3s;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  :deep(.el-upload--picture-card) {
+    background-color: #f2f2f7;
+    border: 2px dashed #d1d1d6;
+    border-radius: 12px;
+  }
+}
+
+.upload-item {
   position: relative;
+  width: 100%;
+  height: 100%;
+
+  .el-upload-list__item-thumbnail {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
 }
 
-// 彩虹按钮样式由组件内部提供
+.el-upload-list__item-actions {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transition: opacity 0.3s;
+  gap: 15px;
 
-.label {
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: #86868b;
+  .action-icon {
+    cursor: pointer;
+    color: #fff;
+    font-size: 20px;
+    transition: transform 0.2s;
+
+    &:hover {
+      transform: scale(1.2);
+    }
+  }
 }
 
-.input-item:hover .input {
-  background: #e5e5ea;
+.el-upload-list__item:hover .el-upload-list__item-actions {
+  opacity: 1;
 }
 
-.input:focus+.label {
-  color: #1d1d1f;
+.preview-img {
+  width: 100%;
+  display: block;
 }
 
-.font-size-panel {
+/* 字体大小弹窗样式 */
+.font-size-modal {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 280px;
-  padding: 1.5rem;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border-radius: 14px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(5px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+  animation: fadeIn 0.2s ease;
 }
 
-.panel-title {
+.modal-content {
+  background: #fff;
+  padding: 24px;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 320px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  text-align: center;
+}
+
+.modal-title {
+  font-size: 18px;
   font-weight: 600;
-  margin-bottom: 1rem;
+  margin-bottom: 20px;
   color: #1d1d1f;
 }
 
-.size-options {
+.size-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 24px;
 }
 
-.size-btn {
-  padding: 0.4rem 0.8rem;
-  border: 1px solid #d1d1d6;
-  border-radius: 6px;
+.size-option {
+  padding: 8px 12px;
+  border: 1px solid #e5e5ea;
+  border-radius: 8px;
   background: #f2f2f7;
+  color: #1d1d1f;
+  font-size: 14px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s;
 
   &.active {
     background: #007aff;
     color: #fff;
     border-color: #007aff;
+    font-weight: 500;
   }
 
-  &:hover {
+  &:hover:not(.active) {
     background: #e5e5ea;
   }
 }
 
-.close-btn {
+.modal-close {
   width: 100%;
-  padding: 0.6rem;
+  padding: 12px;
   border: none;
-  border-radius: 6px;
+  border-radius: 10px;
   background: #f2f2f7;
+  color: #1d1d1f;
+  font-size: 16px;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background 0.2s;
 
   &:hover {
     background: #e5e5ea;
   }
 }
 
-.upload {
-  margin-top: 30px;
+/* 响应式适配 */
+@media (max-width: 480px) {
+  .back-container {
+    padding: 15px;
+  }
+
+  .input-row {
+    gap: 10px;
+  }
+
+  .input-field {
+    height: 44px;
+    padding: 0 40px 0 12px;
+    /* 移动端稍微减小内边距 */
+    font-size: 14px;
+  }
+
+  .size-control-btn {
+    width: 28px;
+    height: 28px;
+    right: 8px;
+  }
+
+  .size-icon {
+    width: 18px;
+    height: 18px;
+  }
 }
 
-/* 控制上传按钮的显示和隐藏 */
-.upload-component {
-  position: relative;
-}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
 
-/* 当文件列表长度为3时，隐藏上传按钮 */
-.upload-component:has(.el-upload-list__item:nth-child(3)) .el-upload--picture-card {
-  display: none;
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 </style>

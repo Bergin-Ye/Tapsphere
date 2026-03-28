@@ -33,7 +33,6 @@
           </div>
         </div>
 
-        <!-- 👇 背面：用 backData，完全独立！ -->
         <div class="card back" :class="{ visible: !isFront }" ref="backcardRef" :style="{
           background: cardColor,
           backgroundImage: cardMaterialStyle.backgroundImage,
@@ -124,7 +123,17 @@
     <loader />
   </div>
   <!-- 渲染结果 -->
-  <div ref="threeContainer" class="threeContainer" v-show="PageNumber === 5 && !isLoading"></div>
+  <div ref="threeContainer" class="threeContainer" v-show="PageNumber === 5 && !isLoading">
+  </div>
+  <div class="buttonGroup" v-show="PageNumber === 5 && !isLoading">
+    <cartButton></cartButton>
+    <homePageButton></homePageButton>
+  </div>
+  <div class="senceChange" v-show="PageNumber === 5 && !isLoading">
+    <changeSence @switchHDR="switchHDR" />
+  </div>
+
+
 </template>
 
 <script setup>
@@ -141,6 +150,10 @@ import { RGBELoader } from 'three/addons/loaders/RGBELoader.js'
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
 import html2canvas from 'html2canvas'
 import loader from '@/components/loader.vue'
+import cartButton from '@/components/cartButton.vue'
+import homePageButton from '@/components/homePageButton.vue'
+import changeSence from '@/components/changeSence.vue'
+
 
 
 const PageNumber = ref(1);
@@ -219,6 +232,24 @@ const backTextPositions = ref({
 const frontImagePositions = ref([]);
 const backImagePositions = ref([]);
 
+// 监听正面图片列表变化，同步位置数组
+watch(() => frontData.value?.images, (newImages) => {
+  if (newImages && newImages.length > frontImagePositions.value.length) {
+    for (let i = frontImagePositions.value.length; i < newImages.length; i++) {
+      frontImagePositions.value[i] = { x: 10 + i * 20, y: 20, scale: 30 };
+    }
+  }
+}, { immediate: true, deep: true });
+
+// 监听背面图片列表变化，同步位置数组
+watch(() => backData.value?.images, (newImages) => {
+  if (newImages && newImages.length > backImagePositions.value.length) {
+    for (let i = backImagePositions.value.length; i < newImages.length; i++) {
+      backImagePositions.value[i] = { x: 10 + i * 20, y: 20, scale: 30 };
+    }
+  }
+}, { immediate: true, deep: true });
+
 // 文字列表
 const frontTextList = computed(() => {
   //如果没有传递值过来就不进行处理
@@ -280,7 +311,7 @@ const frontImageList = computed(() => {
   return frontData.value.images.map((url, idx) => {
     //如果图片位置的值为空 就给默认位置
     if (!frontImagePositions.value[idx]) {
-      frontImagePositions.value[idx] = { x: 10, y: 50, scale: 30 };
+      frontImagePositions.value[idx] = { x: 40, y: 20, scale: 30 };
     }
     //定义一个p 存储图片位置的值
     const p = frontImagePositions.value[idx];
@@ -305,7 +336,7 @@ const backImageList = computed(() => {
   return backData.value.images.map((url, idx) => {
     //如果图片位置的值为空 就给默认位置
     if (!backImagePositions.value[idx]) {
-      backImagePositions.value[idx] = { x: 10, y: 50, scale: 30 };
+      backImagePositions.value[idx] = { x: 40, y: 20, scale: 30 };
     }
     //定义一个p 存储图片位置的值
     const p = backImagePositions.value[idx];
@@ -347,7 +378,7 @@ function startDrag(e, item, side) {
   currentItem.value = item;
   currentSide.value = side; // 关键：存是正面还是背面
   const rect = activeCardRef.value.getBoundingClientRect();
-  //计算拖拽的偏移量
+  //计算拖拽的偏移量（基于卡片左上角的绝对位置）
   dragOffset.value.x = e.clientX - (rect.left + item.x * rect.width / 100);
   dragOffset.value.y = e.clientY - (rect.top + item.y * rect.height / 100);
   //持续监听
@@ -365,9 +396,9 @@ function onDrag(e) {
   const it = currentItem.value;
   //存储当前拖拽的物品是正面还是背面
   const side = currentSide.value;
-  //获取卡片的位置
+  //获取卡片的位置（实时获取，确保参考系准确）
   const rect = activeCardRef.value.getBoundingClientRect();
-  //计算拖拽的位置
+  //计算拖拽的位置（基于卡片左上角的绝对位置）
   let x = ((e.clientX - rect.left - dragOffset.value.x) / rect.width) * 100;
   let y = ((e.clientY - rect.top - dragOffset.value.y) / rect.height) * 100;
   //限制拖拽的位置在卡片内
@@ -386,11 +417,21 @@ function onDrag(e) {
   } else {
     const idx = parseInt(it.uid.split('_')[1]);
     if (side === 'front') {
-      frontImagePositions.value[idx].x = x;
-      frontImagePositions.value[idx].y = y;
+      // 确保位置数组存在对应索引
+      if (!frontImagePositions.value[idx]) {
+        frontImagePositions.value[idx] = { x: x, y: y, scale: 30 };
+      } else {
+        frontImagePositions.value[idx].x = x;
+        frontImagePositions.value[idx].y = y;
+      }
     } else {
-      backImagePositions.value[idx].x = x;
-      backImagePositions.value[idx].y = y;
+      // 确保位置数组存在对应索引
+      if (!backImagePositions.value[idx]) {
+        backImagePositions.value[idx] = { x: x, y: y, scale: 30 };
+      } else {
+        backImagePositions.value[idx].x = x;
+        backImagePositions.value[idx].y = y;
+      }
     }
   }
 }
@@ -527,7 +568,7 @@ function domToTexture(side) {
     textEl.textContent = item.text;
     textEl.style.position = 'absolute';
     textEl.style.left = item.x + '%';
-    textEl.style.top = (item.y + 1) + '%';
+    textEl.style.top = (item.y + -4) + '%';
     textEl.style.color = item.color;
     textEl.style.fontSize = item.fontSize + 'px';
     textEl.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
@@ -543,7 +584,7 @@ function domToTexture(side) {
     imgEl.style.position = 'absolute';
     imgEl.style.left = (img.x - 1.5) + '%';
     // 添加Y轴补偿，修正3D中图片偏上的问题
-    imgEl.style.top = (img.y + 1.9) + '%';
+    imgEl.style.top = (img.y - 3) + '%';
     imgEl.style.width = img.scale + '%';
     imgEl.style.height = 'auto';
     imgEl.style.overflow = 'visible';
@@ -600,6 +641,33 @@ const threeContainer = ref(null)
 let scene, camera, renderer, animateId
 let targetRotationY = 0, targetRotationX = 0
 let frontOverlay, backOverlay
+
+// HDR 环境贴图管理
+//存储环境贴图
+const hdrTextures = ref({
+  loaded: false,
+  textures: {
+    environment: null,
+    environment2: null,
+    environment3: null
+  },
+  currentHDR: 'environment'
+})
+
+// 切换 HDR 环境
+const switchHDR = (hdrName) => {
+  //判断是否加载完成
+  if (hdrTextures.value.loaded && hdrTextures.value.textures[hdrName]) {
+    //根据名字获取贴图
+    const texture = hdrTextures.value.textures[hdrName]
+    //切换hdr贴图
+    scene.environment = texture
+    scene.background = texture
+    hdrTextures.value.currentHDR = hdrName
+  } else {
+  }
+}
+
 // 卡片配置
 const CARD_CONFIG = {
   width: 5.5,
@@ -634,14 +702,30 @@ async function initThree() {
   // 场景
   scene = new THREE.Scene()
 
-  // 加载 HDR
+  // 加载 HDR 环境贴图
   const hdrLoader = new RGBELoader()
-  hdrLoader.load('/src/assets/素材/材质/environment.hdr', (texture) => {
-    texture.mapping = THREE.EquirectangularReflectionMapping
-    //加载hdr贴图的环境光和背景
-    scene.environment = texture
-    scene.background = texture
-    loading.value = false;
+  const hdrFiles = [
+    { name: 'environment', path: '/src/assets/素材/材质/environment.hdr' },
+    { name: 'environment2', path: '/src/assets/素材/材质/environment2.hdr' },
+    { name: 'environment3', path: '/src/assets/素材/材质/environment3.hdr' }
+  ]
+
+  let loadedCount = 0
+  hdrFiles.forEach((hdrFile) => {
+    hdrLoader.load(hdrFile.path, (texture) => {
+      texture.mapping = THREE.EquirectangularReflectionMapping
+      hdrTextures.value.textures[hdrFile.name] = texture
+      loadedCount++
+
+      // 当所有 HDR 都加载完成时
+      if (loadedCount === hdrFiles.length) {
+        hdrTextures.value.loaded = true
+        // 设置默认 HDR
+        scene.environment = hdrTextures.value.textures.environment
+        scene.background = hdrTextures.value.textures.environment
+        loading.value = false
+      }
+    })
   })
 
   // 相机
@@ -879,22 +963,25 @@ onUnmounted(() => {
 }
 
 .img-container {
-  position: relative;
+  position: absolute;
   overflow: visible !important;
-  /* 扩大可点击区域！！！ */
-  padding: 10px;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 .img-scale-controls {
   position: absolute;
-  top: 0px;
-  right: 0px;
+  top: -15px;
+  right: -15px;
   display: none;
   gap: 4px;
   background: rgba(0, 0, 0, 0.7);
   padding: 4px 6px;
   border-radius: 6px;
   z-index: 999;
+  pointer-events: auto;
+  /* 确保缩放按钮不会影响拖拽计算 */
+  transform: translateZ(1px);
 }
 
 /* 关键：只要 hover 图片所在的容器，按钮就显示 */
@@ -1039,5 +1126,24 @@ onUnmounted(() => {
   top: 0;
   left: 0;
   z-index: 9999;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 20px;
+  position: fixed;
+  bottom: 60px;
+  left: 1200px;
+
+  /* 👇 添加下面这两行进行测试 */
+
+  z-index: 9999 !important;
+}
+
+.senceChange {
+  position: relative;
+  top: 85%;
+  left: 50%;
+  z-index: 9999 !important;
 }
 </style>
