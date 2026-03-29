@@ -20,7 +20,11 @@ const frontRoutes = [
   },
   {
     path: '/profile',
-    component:() => import('@/views/ProfilePage.vue')
+    component:() => import('@/views/ProfilePage.vue'),
+  },
+  {
+    path: '/cards',
+    component:() => import('@/views/MyCardsPage.vue')
   }
 ]
 

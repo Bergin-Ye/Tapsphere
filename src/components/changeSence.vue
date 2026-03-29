@@ -1,23 +1,23 @@
 <template>
   <div class="radio-inputs">
     <label class="radio">
-      <input type="radio" name="radio" checked="" @change="$emit('switchHDR', 'environment')">
-      <span class="name">Room</span>
+      <input type="radio" name="radio" checked="" @change="$emit('switch-hdr', 'environment')">
+      <span class="name">环境 1</span>
     </label>
     <label class="radio">
-      <input type="radio" name="radio" @change="$emit('switchHDR', 'environment2')">
-      <span class="name">Path</span>
+      <input type="radio" name="radio" @change="$emit('switch-hdr', 'environment2')">
+      <span class="name">环境 2</span>
     </label>
 
     <label class="radio">
-      <input type="radio" name="radio" @change="$emit('switchHDR', 'environment3')">
-      <span class="name">Sky</span>
+      <input type="radio" name="radio" @change="$emit('switch-hdr', 'environment3')">
+      <span class="name">环境 3</span>
     </label>
   </div>
 </template>
 
 <script setup>
-const emit = defineEmits(['switchHDR'])
+const emit = defineEmits(['switch-hdr'])
 </script>
 
 <style>

@@ -4,19 +4,19 @@
     <p class="login-subtitle">Just some details to get you in.!</p>
 
     <div class="input-group">
-      <input type="text" placeholder="Username" class="login-input" />
+      <input type="text" placeholder="Username" class="login-input" v-model="username" />
     </div>
     <div class="input-group">
-      <input type="text" placeholder="Email/Phone" class="login-input" />
+      <input type="text" placeholder="Email/Phone" class="login-input" v-model="email" />
     </div>
     <div class="input-group">
-      <input type="password" placeholder="Password" class="login-input" />
+      <input type="password" placeholder="Password" class="login-input" v-model="password" />
     </div>
     <div class="input-group">
-      <input type="password" placeholder="Confirm Password" class="login-input" />
+      <input type="password" placeholder="Confirm Password" class="login-input" v-model="confirmPassword" />
     </div>
 
-    <button class="login-btn">Signup</button>
+    <button class="login-btn" @click="handleRegister">Signup</button>
 
 
     <!-- 分隔线 -->
@@ -74,12 +74,63 @@
 
 <script setup>
 import { useRouter } from 'vue-router'
+import { ref } from 'vue'
+
+const username = ref('')
+const email = ref('')
+const password = ref('')
+const confirmPassword = ref('')
+
 
 const router = useRouter()
-
 const handleLogIn = () => {
   router.push('/login')
 }
+
+const handleRegister = () => {
+  if (!username.value) {
+    alert('Please enter a username')
+    return
+  }
+  if (!email.value) {
+    alert('Please enter an email')
+    return
+  }
+  if (password.value !== confirmPassword.value) {
+    alert('Passwords do not match')
+    return
+  }
+  //读取本地的userlist 有就转换成对象 没有就返回空数组
+  const userList = JSON.parse(localStorage.getItem('userList')) || []
+  //检查用户名是否已存在
+  if (userList.some(user => user.username === username.value)) {
+    alert('Username already exists')
+    return
+  }
+  //检查邮箱是否已存在
+  if (userList.some(user => user.email === email.value)) {
+    alert('Email already exists')
+    return
+  }
+  userList.push({
+    username: username.value,
+    email: email.value,
+    password: password.value,
+    order: []
+  })
+  //将userlist 保存到本地
+  localStorage.setItem('userList', JSON.stringify(userList))
+  //提示用户注册成功
+  alert('Registration successful')
+  //跳转到登录页
+  router.push('/login')
+}
+
+
+
+
+
+
 </script>
 
 <style scoped>

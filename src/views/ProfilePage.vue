@@ -1,24 +1,34 @@
 <template>
   <div class="profile">
     <WhiteHeader class="header" />
-    <div class="content">
+    <div class="content" v-show="$route.path === '/profile'">
       <div class="profile-content">
         <div class="profile-picture">
-          <img :src="profilePicture" alt="profile picture" />
+          <el-upload :show-file-list="false" :before-upload="beforeAvatarUpload" @change="handleAvatarChange">
+            <!-- 有头像 → 显示头像 -->
+            <img v-if="userInfo?.avatar" :src="userInfo.avatar" class="avatar-img" />
+
+            <!-- 没头像 → 显示可点击的灰色圆形 -->
+            <div v-else class="default-avatar">
+              <!-- 加个加号提示可点击 -->
+              <span class="plus">+</span>
+            </div>
+
+          </el-upload>
         </div>
         <div class="profile-info">
-          <p class="title">Your name</p>
-          <p class="subtitle">yourname@gmail.com</p>
+          <p class="title">{{ userInfo?.username }}</p>
+          <p class="subtitle">{{ userInfo?.email }}</p>
         </div>
       </div>
       <button class="name">
         <p class="lname">Name</p>
-        <p class="rname">xxx</p>
+        <p class="rname">{{ userInfo?.username }}</p>
       </button>
 
       <button class="card">
         <p class="lcard">My Cards</p>
-        <p class="rcard">View my designs</p>
+        <p class="rcard" @click="viewMyCards">View my designs</p>
       </button>
 
       <button class="order">
@@ -28,12 +38,56 @@
 
       <button class="save">Save Change</button>
     </div>
+    <router-view style="position: fixed;inset:0;" />
   </div>
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import WhiteHeader from '@/components/WhiteHeader.vue';
-import profilePicture from '@/assets/素材/profile.jpg';
+
+const router = useRouter()
+const userInfo = ref(null)
+
+// 页面加载 → 读取用户（包含头像）
+onMounted(() => {
+  const user = localStorage.getItem('currentUser')
+  if (user) {
+    userInfo.value = JSON.parse(user)
+  }
+})
+
+// 选择图片后触发
+function handleAvatarChange(file) {
+  // 把图片转成 base64（能存在本地）
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    // 1. 更新页面头像
+    userInfo.value.avatar = e.target.result
+    // 2. 保存到 localStorage（覆盖！）
+    localStorage.setItem('currentUser', JSON.stringify(userInfo.value))
+  }
+  reader.readAsDataURL(file.raw)
+}
+
+// 限制图片大小
+function beforeAvatarUpload(file) {
+  const isImage = file.type.startsWith('image/')
+  if (!isImage) {
+    alert('请上传图片！')
+    return false
+  }
+  return true
+}
+
+// 查看我的卡片
+function viewMyCards() {
+  router.push('/cards')
+}
+
+
+
 </script>
 
 
@@ -80,11 +134,34 @@ import profilePicture from '@/assets/素材/profile.jpg';
 .profile-picture {
   width: 60px;
   height: 60px;
-  background-color: #a2a1a1;
   border-radius: 999px;
-  display: flex;
-  margin-right: 25px;
   overflow: hidden;
+  margin-right: 25px;
+  cursor: pointer;
+}
+
+/* 强制让上传区域填满整个圆形 */
+:deep(.el-upload) {
+  display: block;
+  width: 60px;
+  height: 60px;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.default-avatar {
+  width: 100%;
+  height: 100%;
+  background-color: #a2a1a1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #fff;
 }
 
 .name,

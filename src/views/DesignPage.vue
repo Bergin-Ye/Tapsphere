@@ -126,11 +126,11 @@
   <div ref="threeContainer" class="threeContainer" v-show="PageNumber === 5 && !isLoading">
   </div>
   <div class="buttonGroup" v-show="PageNumber === 5 && !isLoading">
-    <cartButton></cartButton>
-    <homePageButton></homePageButton>
+    <cart-button @click="handleSaveMyCard"></cart-button>
+    <home-page-button></home-page-button>
   </div>
   <div class="senceChange" v-show="PageNumber === 5 && !isLoading">
-    <changeSence @switchHDR="switchHDR" />
+    <change-sence @switch-hdr="switchHDR" />
   </div>
 
 
@@ -806,7 +806,6 @@ async function initThree() {
   const cardMaterial = new THREE.MeshStandardMaterial({
     map: baseTexture,
     color: cardColorObj,
-    // ✅ 使用动态计算的数值
     metalness: physicsParams.metalness,
     roughness: physicsParams.roughness,
   });
@@ -895,6 +894,120 @@ onUnmounted(() => {
   if (animateId) cancelAnimationFrame(animateId)
   if (renderer) renderer.dispose()
 })
+
+// blob URL 转 base64 函数
+async function blobUrlToBase64(blobUrl) {
+  return new Promise((resolve, reject) => {
+    // 如果已经是 base64，直接返回
+    if (blobUrl && blobUrl.startsWith('data:')) {
+      resolve(blobUrl);
+      return;
+    }
+    // 如果不是 blob URL，直接返回
+    if (!blobUrl || !blobUrl.startsWith('blob:')) {
+      resolve(blobUrl);
+      return;
+    }
+    fetch(blobUrl)
+      .then(response => response.blob())
+      .then(blob => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          resolve(reader.result);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      })
+      .catch(reject);
+  });
+}
+
+//新增代码 之前存储的图片信息不是base64 然后viewmycard那里需要转换为base64 才能导入
+//存储当前当前卡片的信息
+async function saveMyCard() {
+  const userStr = localStorage.getItem('currentUser')
+  if (!userStr) {
+    alert('请先登录')
+    return
+  }
+  const user = JSON.parse(userStr)
+
+  // 深拷贝数据
+  const frontDataCopy = JSON.parse(JSON.stringify(frontData.value));
+  const backDataCopy = JSON.parse(JSON.stringify(backData.value));
+
+  // 转换正面图片
+  if (frontDataCopy.images && frontDataCopy.images.length > 0) {
+    const convertedFrontImages = [];
+    for (const imgUrl of frontDataCopy.images) {
+      try {
+        const base64 = await blobUrlToBase64(imgUrl);
+        convertedFrontImages.push(base64);
+      } catch (e) {
+        convertedFrontImages.push(imgUrl);
+      }
+    }
+    frontDataCopy.images = convertedFrontImages;
+  }
+
+  // 转换背面图片
+  if (backDataCopy.images && backDataCopy.images.length > 0) {
+    const convertedBackImages = [];
+    for (const imgUrl of backDataCopy.images) {
+      try {
+        const base64 = await blobUrlToBase64(imgUrl);
+        convertedBackImages.push(base64);
+      } catch (e) {
+        convertedBackImages.push(imgUrl);
+      }
+    }
+    backDataCopy.images = convertedBackImages;
+  }
+
+  const cardData = {
+    id: Date.now().toString(), // 唯一ID
+    createTime: new Date().toLocaleString(),
+    // 颜色
+    color: cardColor.value,
+    colorName: colorNow.value || 'Custom Color',
+    // 材质
+    material: materialNow.value || 'Matte Metal',
+    // 正面
+    frontData: frontDataCopy,
+    // 背面
+    backData: backDataCopy,
+    // 文字位置
+    frontTextPositions: JSON.parse(JSON.stringify(frontTextPositions.value)),
+    backTextPositions: JSON.parse(JSON.stringify(backTextPositions.value)),
+    // 图片位置 & 缩放
+    frontImagePositions: JSON.parse(JSON.stringify(frontImagePositions.value)),
+    backImagePositions: JSON.parse(JSON.stringify(backImagePositions.value))
+  }
+
+  // 3. 如果用户没有 orders 列表，创建空数组
+  if (!user.orders) {
+    user.orders = []
+  }
+
+  // 4. 把当前卡片 push 进去
+  user.orders.push(cardData)
+
+  // 5. 保存回 localStorage
+  localStorage.setItem('currentUser', JSON.stringify(user))
+
+  alert('The card has been saved to My Cards.')
+}
+
+// 处理保存卡片的点击事件
+async function handleSaveMyCard() {
+  try {
+    await saveMyCard();
+  } catch (error) {
+    console.error('保存卡片失败:', error);
+    alert('保存卡片失败，请重试');
+  }
+}
+
 </script>
 
 <style scoped lang="scss">
@@ -1137,7 +1250,7 @@ onUnmounted(() => {
 
   /* 👇 添加下面这两行进行测试 */
 
-  z-index: 9999 !important;
+  z-index: 10000 !important;
 }
 
 .senceChange {

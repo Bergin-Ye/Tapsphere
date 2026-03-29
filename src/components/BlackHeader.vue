@@ -4,30 +4,53 @@
       <el-image alt="logo" :src="logo1" style="width: 140px; height: 82px;" @click="handleHome"></el-image>
     </div>
     <div class="right">
-      <el-button class="logIn" @click="handleLogIn">Log in</el-button>
+      <el-button v-if="ifLoggedIn" class="logIn" @click="handleMyAccount">
+        My Account
+      </el-button>
+      <el-button v-else class="logIn" @click="handleLogIn">Log in</el-button>
       <el-button class="startFree" @click="handleStartFree">Start Free</el-button>
     </div>
   </div>
 </template>
 
 <script setup>
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 
+const logo1 = new URL('@/assets/素材/logo/logo2.png', import.meta.url).href
 const router = useRouter()
 
-const logo1 = new URL('@/assets/素材/logo/logo2.png', import.meta.url).href
+const ifLoggedIn = computed(() => {
+  return !!localStorage.getItem('currentUser')
+})
+
+
+
+const handleStartFree = () => {
+  router.push('/design')
+}
 
 const handleHome = () => {
   router.push('/home')
 }
 
+const isLoggedIn = ref(false)
+onMounted(() => {
+  const user = localStorage.getItem('currentUser')
+  if (user) {
+    isLoggedIn.value = true
+  } else {
+    isLoggedIn.value = false
+  }
+})
 const handleLogIn = () => {
   router.push('/login')
 }
 
-const handleStartFree = () => {
-  router.push('/design')
+const handleMyAccount = () => {
+  router.push('/profile')
 }
+
 </script>
 
 <style scoped lang="scss">

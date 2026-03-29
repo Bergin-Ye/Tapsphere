@@ -4,11 +4,11 @@
     <p class="login-subtitle">Glad you're back.!</p>
 
     <div class="input-group">
-      <input type="text" placeholder="Username" class="login-input" />
+      <input type="text" placeholder="Username" class="login-input" v-model="username" />
     </div>
 
     <div class="input-group">
-      <input type="password" placeholder="Password" class="login-input" />
+      <input type="password" placeholder="Password" class="login-input" v-model="password" />
     </div>
 
     <div class="remember-me">
@@ -16,7 +16,7 @@
       <label for="remember">Remember me</label>
     </div>
 
-    <button class="login-btn">Login</button>
+    <button class="login-btn" @click="handleLogin">Login</button>
 
     <!-- 忘记密码 -->
     <p class="forgot-password">Forgot password ?</p>
@@ -76,12 +76,34 @@
 
 <script setup>
 import { useRouter } from 'vue-router'
+import { ref } from 'vue'
 
+const username = ref('')
+const password = ref('')
 const router = useRouter()
 
 const handleRegister = () => {
   router.push('/register')
 }
+
+const handleLogin = () => {
+  //获取已经存储的用户列表
+  const userList = JSON.parse(localStorage.getItem('userList')) || []
+  //查找匹配的用户
+  const finduser = userList.find(u => {
+    return u.username === username.value && u.password === password.value
+  })
+  if (!finduser) {
+    alert('Username or password is incorrect')
+    return
+  }
+  //登录成功
+  //将用户信息存储到本地存储
+  localStorage.setItem('currentUser', JSON.stringify(finduser))
+  //跳转到首页
+  router.push('/home')
+}
+
 
 </script>
 
